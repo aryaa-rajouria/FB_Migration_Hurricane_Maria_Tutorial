@@ -127,10 +127,13 @@ kable(mig_count,
 
 <br>
 
-We now create a chord map to visualize the migration patterns of those in the Facebook dataset.
-```{r}
-mig_flow <- fb %>% select(orgin, state, expat_population)
+We now create a chord map to visualize the migration patterns of those in the FB data set. As is clearly evident from the chart, many migrants are coming from Mexico and India. California and New Jersey are popular relocation sites. 
 
+```{r}
+#selecting relevant variables: you need these three for a chord chart
+mig_flow <- fb %>% select(origin, state, expat_population)
+
+#putting our data into the mig_chord function 
 mig_flow %>% mig_chord()
 
 ```
@@ -247,7 +250,7 @@ We provide another way to estimate US population count using FB data here (the r
 ```
 
 
-# **National FB expat populations{#expatpopsize}**
+## **National FB expat populations{#expatpopsize}**
 
 In the FB data, we find a large number of Mexican migrants in the United States. This is true for all 7 wave (from January 2017 to July 2018). The number of Mexican migrants is significantly larger than the estimated migrant population from the other 27 origin countries. There is a marked a marked difference in the number of migrants from Puerto Rico between Waves 3 and 4, 4 and 5, and beyond Wave 5.
 
@@ -272,8 +275,11 @@ fb.expat %>%
 
 ```
 
-### WA FB total population + expat population
-(estimates fluctuate by wave. notice large jump in estimated expat pop size between waves 5 and 6, 6 and 7. suggests data may not be most reliable. also illustrates a significant barrier in using fb data for research.)
+## **WA FB total population + expat population**
+
+Here, we use FB data to estimate state level population by waves. We specifically focus on Washington. First, we estimate migrant population in Washington according to the FB data Then, we estimate migration population in Washington according to origin.  
+
+When estimating migrant population in Washington, we find a steady increase from Wave 1 to Wave 5. Then, there is a sharp increase between Wave 5 and Wave 6. This could suggest that the data may not be the most reliable, illustrating a potentially significant barrier in using FB data for research. As a result, we filter out waves 6 and 7 when estimating the migration population in Washington according to origin. While there are slight fluctuations over time, a majority of the migrants are coming from Mexico, India, Vietnam, China, and Canada.The number of migrants coming from Mexico to Washington are significantly greater than those from other countries.  
 
 ```{r}
 ## estimated wa population by wave, according to fb
@@ -316,10 +322,10 @@ fb %>%
 
 ## Maps
 ### Static map
-(summary or intro to maps)
 
-Recall the [estimated population sizes](#expatpopsize) for migrants from Mexico are much larger than those from other countries. To attenuate the difference in the map, the population size is logged. (Also: the FB data only covers 28 countries; it is not the case that there are no migrants from the entire African continent or Latin America.)
+Maps are a great way to visualize migration patterns. Static maps are the most straight-forward way to showcase a map. They do not require a mapping library and can be displayed anywhere images can be displayed.They are not interacting, and one can't zoom or change between the map layers. 
 
+Here, we look at the migration experiences during Wave 4 (this is when Hurricane Maria took place). The maps reveal what we found earlier: that the [estimated population sizes](#expatpopsize) for migrants from Mexico are much larger than those from other countries. To attenuate the difference in the map, the population size is logged. It's also important to note that the FB data only covers 28 countries: it is not the case that there are no migrants from the entire African continent or Latin America. The visualization make this discrepancy more clear.  
 
 ```{r}
 ## plot the data on expat groups
@@ -349,16 +355,12 @@ fb.pop.counts.w4 %>%
   theme(legend.position="bottom")
 
 ```
-
-
 ### Interactive maps
 #### mapview
-More info here: [mapview tutorial](https://bookdown.org/nicohahn/making_maps_with_r5/docs/mapview.html)
 
+Unlike static maps, interactive maps allow the user to zoom in and out, identify specific features, or query underlying data or indicator (i.e. socioeconomic status). Here, we created a quick and simple interactive map for exploratory data analysis on the spatial context. 
 
-[documentation](https://cran-r-project.org/web/packages/mapview/mapview.pdf)
-
-not much customization was done here. this is a quick way to create a simple interactive map for exploratory data analysis, including spatial context
+You can find more detailed instructions on how to create an interactive map at [mapview tutorial](https://bookdown.org/nicohahn/making_maps_with_r5/docs/mapview.html) and by using [cran documentation](https://cran-r-project.org/web/packages/mapview/mapview.pdf). 
 
 ```{r}
 ## download world outline data (sf)
@@ -411,7 +413,7 @@ world %>%
 
 ```
 
-Code on github repo indicates IPUMS download of the 2017 1-year ACS data with sex, age, bpl, (statefip) variables
+The code provided by Alexander et al on the GitHub repo indicates IPUMS download of the 2017 1-year ACS data with sex, age, bpl and statefip variables. We read in the pre-saved ACS 2017 1 year data here: 
 
 ```{r}
 # read in pre-saved ACS 2017 1-year data
@@ -420,15 +422,16 @@ acs_prop_age <- read_csv("https://raw.githubusercontent.com/MJAlexander/fb-migra
 
 ```
 
-## Descriptives of ACS data
-(comparing the fb estimates and acs estimates, to assess bias)
+## **Descriptives of ACS data**
 
+Alexander et al note that FB data represents FB users. Thus, it is not representative of the broader population and it is difficult for the findings to be generalizable. However, the ACS is representative. Therefore, the comparison of the FB estimates with the ACS estimates enables us to assess this potential bias. 
 ---
 
-# Comparing FB and ACS data
+# **Comparing FB and ACS data**
 
-## National level differences
-Looking at just the 28 countries for which there is FB data available, we see there are differences in the number of estimated migrants by data source. There are 10 countries where the FB estimate is larger than the ACS estimate, while for the remaining 18 countries the ACS estimate is larger than the FB estimate.
+## **National level differences**
+
+It is important to note that the FB data encapsulates only 28 different countries. When looking at this data, we see that there are differences in the number of estimated migrants when compared to that of the ACS. There are 10 different countries where the FB estimate is greater than the ACS estimate. For the remaining 18 countries, the ACS estimate is larger than the FB estimate. This indicates a misalignment between the data sources. 
 
 ```{r}
 ## national level estimates of number of "expats" in the acs, compared to fb estimates
@@ -453,7 +456,7 @@ kable(acs.fb.comp %>% select(1:4), format.args=list(big.mark=',')) %>%
   kable_paper("hover")
 
 ```
-
+Note: in the table above, positive values suggest a larger ACS estimate and negative values suggest larger FB values. 
 
 ```{r, include=F, echo=F}
 ## map the results, to see if potential regional differences
@@ -466,17 +469,10 @@ kable(acs.fb.comp %>% select(1:4), format.args=list(big.mark=',')) %>%
 
 ```
 
-(note: positive values = larger ACS estimate; negative values = larger fb values. 
 
-might be interesting to ponder as to why we might see such different acs/fb estimates - self-reports? will likely require examining exactly how fb comes up with estimates of the expat population.
+## **State level differences**
 
-to check: if there are distinctive regional patterns.)
-
-[tangent: the large fb underestimate of individuals from china makes some sense, given the great firewall and fb being banned there]
-
-
-## State level differences
-The authors excluded North Carolina due to some unexplained data anomaly (eyeballing it, can't tell where or what the anomaly might be - especially since the acs number looks comparable?). They also examined only states with 18,000+ PRs to avoid rounding(?) issues
+When calculating the state-level differences, the authors exclude North Carolina from the analysis. They explain that it is in an anomaly. They also examined only states with 18,000+ PRs to avoid rounding issues. While the ACS and FB data have different migrant population estimates at the state level, most of them are comparable. However, the disparity between the two data sets are a slightly greater (indicating a greater misalignment) for Connecticut and New Jersey. Florida, New York, and Pennsylvania have the largest number of migrants coming in to the state.  
 
 ```{r}
 # 4. Top states based on PR population --------------------------------
@@ -515,11 +511,10 @@ pr.state %>%
 
 ```
 
-(I thought about making comparison maps by data source, but since the pr population is pretty small in most states the maps might not be very informative)
-
-
-## Age distribution
+## **Age distribution**
 (Figure 1 from the paper)
+
+When examining the age distribution of the migrants, it is evident that in all the states, the ACS has an older age distribution while the Facebook distributions are greater for the under-30 age groups. The ACS trends differ in all age groups.  
 
 ```{r}
 # 7. age change -----------------------------------------------------------
@@ -548,10 +543,9 @@ acs_prop_age %>%
 
 ```
 
-## Sex ratio
-(for states with larger pr populations, in general fb data indicates higher m:f sex ratio. however, not true in tx and ca)
+## **Sex ratio**
 
-Table 1 in the paper, and also a visual look at the difference in sex ratios by data source for selected states
+As is evident in the table below, when we use the Facebook Data, the states with larger Puerto Rican populations showcase greater male to female sex ratios. However, it is important to note that this does not hold true for Texas and California. The Facebook sex ratios are generally greater than the ACS sex ratios, indicating higher proportions of men than the ACS. The following Table is Table 1 in the paper. The visualization showcases the difference in sex ratios by data source for selected states. 
 
 ```{r}
 # 8. sex ratios -----------------------------------------------------------
@@ -605,10 +599,11 @@ sr.nat %>%
 
 ---
 
-# Analysis: Difference-in-Differences estimation
-(summary of diff-in-diff)
+# **Analysis: Difference-in-Differences estimation**
 
-[wikipedia](https://en.wikipedia.org/wiki/Difference_in_differences)
+Difference-in-difference models are panel data methods applied when we are attempting to understand the effect of a particular treatment. Difference-in-difference models are used when some samples are exposed to a treatment and others are not. In this study, Alexander et al used difference-in-difference to estimate the percent change in Puerto Rican migrants in the continental US after Hurricane Maria. They choose this method to overcome issues of non-representativness and fluctuations in the data over time (indpendent of migration events). 
+
+Difference-in-difference models haven been be used to study the effects of a [particular policy](https://diff.healthpolicydatascience.org/), in papers focused on the [economics of education](https://www-sciencedirect-com.offcampus.lib.washington.edu/science/article/pii/B978012815391800001X), and [labor economics](https://www-sciencedirect-com.offcampus.lib.washington.edu/topics/economics-econometrics-and-finance/difference-in-differences). 
 
 In this paper, the diff-in-diff estimator is
 $$
@@ -616,14 +611,12 @@ $$
 $$
 where $g$ is the group of interest (age, sex, country of origin, state of residence).
 
-(Control group: expats from all other countries aside from Mexico, which is assumed to follow different migration motivations, dynamics(?))
-
-Effectively, comparing the change in PR migrant population in the US between waves with the change in population for all other migrants (but not Mexican immigrants).
+The control group includes migrants from all other countries aside from Mexico, which is assumed to follow different migration motivations. Effectively, using this estimator, we are comparing the change in PR migrant population in the US between waves with the change in population for all other migrants (but not Mexican immigrants).
 
 
-## National diff-in-diff estimate of out-migration from Puerto Rico
+## **National diff-in-diff estimate of out-migration from Puerto Rico**
 
-(The first paragraph in the results section of the paper)
+Using the difference-in-difference model, Alexander et al find a 17% increase int eh number of Puerto Rican migrants present in the continental US between October 2017 and January 2018. 
 
 ```{r}
 exp_prop_usa <- fb %>% 
@@ -668,11 +661,11 @@ res %>%
 
 ```
 
-### National estimate of PR out-migrants to the US
-Use estimated percent with ACS population data to obtain estimate of PR migrants in the US 
+### **National estimate of PR out-migrants to the US**
+Here, we take the estimate percent changes obtained from the difference-in-difference models and multiply them by the relevant populations reported in the ACS. This enables us to estimate the change in the *number* of migrants.
 
 $$\hat{M}_{g} = \hat{\pi}_{g} \times P_{g}^{ACS}$$
-where $\hat{M_{g}}$ is the estimated number of migrants in group $g$, $\hat{\pi}_{g}$ is the proportional change in PR migrants in group $g$, and $P_{g}^{ACS}$ is the estimated number of PR migrants in group $g$ in the ACS
+where $\hat{M_{g}}$ is the estimated number of migrants in group $g$, $\hat{\pi}_{g}$ is the proportional change in PR migrants in group $g$, and $P_{g}^{ACS}$ is the estimated number of PR migrants in group $g$ in the ACS.
 
 
 ```{r}
@@ -689,11 +682,9 @@ acs_prop_age %>%
 
 
 
-## State diff-in-diff estimates of in-migrants from PR
-(`expat_pop` = 20 seems to be some form of filler data - it gets excluded from the data, but reasoning is not explained.
-Also, North Carolina is to be excluded - not quite sure why )
+## **State diff-in-diff estimates of in-migrants from PR**
 
-(Table 2 in the paper)
+As is evident form the difference in difference estimates of in-migrants from Puerto Rico: a majority migrate to the states that have an existing population of Puerto Rican migrants post Hurricane Maria.This can indicate community based migration/chain migration. In the code, it is important to note that in `expat_pop` 20 seems to be some form of filler data - it gets excluded from the data, but the reasoning behind why is not explained. Parallel to above, North Carolina is also excluded (there isn't necessarily an explanation as to why).
 
 ```{r}
 # 5a. State by state analysis (table) ----------------------------------------------
@@ -768,8 +759,9 @@ ex_props %>%
 
 ```
 
-### Map
-(Figure 2 in the paper)
+### **Map**
+
+As evident in data, the static map shows the largest increase of Puerto Rican migrants were in Florida. 
 
 ```{r}
 # 5b. State by state analysis (map) ---------------------------------------
@@ -802,9 +794,12 @@ states_map %>%
 ```
 
 
-## Age-specific analysis
+## **Age-specific analysis**
 
-### National estimates of out-migrants from PR (to the US)
+### **National estimates of out-migrants from PR (to the US)**
+
+In terms of who migrated out of Puerto Rico after Hurricane Maria, there is a large percentage increase in the 15-29 year age range. There were less people above the age of 35 migrating out of Puerto Rico in a post-disaster context. 
+
 ```{r}
 # pr pop vs all other migrant pop, according to fb data
 # (non-pr includes mexico)
@@ -837,7 +832,6 @@ d_tot %>%
 
 ```
 
-(Figure 3 in the paper)
 
 ```{r}
 ## plot results (figure 3 in the paper, but with a confidence interval)
@@ -872,7 +866,8 @@ d_tot %>%
 ```
 
 ## Change in sex ratio of out-migrants from PR, by state
-(Table 3 in the paper)
+
+There were greater men than women in all of the nine states: this did not dramatically change after the Hurricane. However, there were some states (i.e. Texas) that suggested an increase of male migrants than other states (i.e. Pennsylvania) that suggested an increase of female migrants. 
 
 ```{r}
 ## change in sex ratio between waves in the fb data, by state (table 3)
@@ -908,9 +903,10 @@ fb %>%
 
 ---
 
-# Return migration
+# **Return migration**
 
-## National diff-in-diff estimate of out-migration from the US to Puerto Rico
+## **National diff-in-diff estimate of out-migration from the US to Puerto Rico**
+
 (actually, we don't have enough information to infer whether individuals originally from PR, were in the US in the last wave, directly returned to PR. it's possible they went to another country. however, it is likely that they would have gone back to pr.)
 
 (Authors note there is some rounding issue after wave 5, thus keeping only those records with `expat_population` over 1000)
