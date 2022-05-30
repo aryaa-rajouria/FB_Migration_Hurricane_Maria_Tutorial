@@ -65,11 +65,14 @@ library(tidyverse)       # for data wrangling
 #library(ggplot2)        # for pretty graphs 
 library(viridis)         # for plot colors
 library(migest)          # for migration visualization 
+library(dplyr)           # for magritte 
 ```
 
 # **Facebook Data** 
 
 ## **Loading in the Facebook Data**
+
+Next, we will load in the FB data from GitHub, wrangle the data into the format we want, and then create the different waves. 
 
 ```{r, results='hide'}
 ## load the raw facebook data
@@ -121,7 +124,7 @@ Note: The data from waves 6 and 7 contain a significant number of "1000"s in the
 
 ## **Descriptives**
 
-Here are some descriptives and visualizations to better understand the clean data. Each new 'wave' of data is collected on the first of the month, every couple of months. As is evident from the table below, the number of migrants (called expat_population) is similar from Wave 1 to Wave 5. There is a decrease from Wave 5 to Wave 6. For the last wave (Wave 7) the migrant count remains stagnant. 
+Here are some descriptives and visualizations to better understand the clean data. Each new 'wave' of data is collected on the first of the month, every couple of months. As is evident from the table below, the number of migrants (called expat_population) is similar from Wave 1 to Wave 5. There is a decrease from Wave 5 to Wave 6. Wave 6 and Wave 7 are more similar. 
 
 Because the data contains an observation for each state-country of origin-sex-age group combination, and there is evidence of bottom coding and data suppression, the estimates below are likely overestimates. This is especially obvious from the estimates for waves 6 and 7.
 
@@ -135,20 +138,28 @@ kable(mig_count,
 
 <br>
 
-When the data is disaggregated as per the different waves, we find that there are differences in the migration experiences of males and females. In general, there are slightly more female migrants than male migrants. This difference is a little more accentuated in Wave 1, Wave 3, Wave 5 and Wave 6. 
+WWhen we disaggregate the data by different waves, we also find that there are differences in the migration experiences of males and females. In general, there are slightly more male migrants than female migrants. This difference is a little more accentuated in Wave 1, Wave 3, Wave 5 and Wave 6. 
+
+To do this, we group by wave and sex, adding the number of migrants (expat_population) in the FB data set. We then use ggplot2 to create a bar graph to visualize these differences. 
 
 ```{r}
-#looking at how many people who migrated were male vs female 
-sex_comparison <- fb %>% group_by(sex, wave, date) %>% summarise(n = sum(expat_population)) %>% mutate(sex = ifelse(sex == 1, "male", "female")) 
+#looking at how many people who migrated were male vs female according to wave 
+sex_wave_comparison <- fb %>% group_by(wave, sex) %>% summarise(n = sum(expat_population))
 
-kable(sex_comparison %>% pivot_wider(names_from=sex, values_from=n), 
-      format.args=list(big.mark=',')) %>%
-  kable_paper()
-
+#graphing waves 
+sex_wave_comparison$wave_factor<- factor(sex_wave_comparison$wave)
+sex_wave_comparison$sex_character<- as.character(sex_wave_comparison$sex)
+ggplot(sex_wave_comparison, aes(fill=sex_character, y=n, x=wave)) + 
+    geom_bar(position="dodge", stat="identity") +
+    scale_fill_brewer(palette="Dark2") +
+    labs( x = "wave", y = "count", fill = "sex") +
+    coord_flip()+
+    scale_x_discrete(name = "wave", limits=c(1,2,3,4,5,6,7)) +
+    scale_fill_discrete(name = "sex", labels = c("male", "female"))
+    
 ```
 
-
-Now, we explore age. As per the table and graph below, of all the migrants in the Facebook data, there were more that migrants in their mid-20s and mid-30s compared to younger (teenagers) or older (past 50) populations. 
+Now, we will examine the age patterns of migrants within the different waves. As per the table and graph below, of all the migrants in the Facebook data, there were more migrants in their mid-20s and mid-30s compared to younger (teenagers) or older (past 50) populations. All of the waves had similar age patterns. 
 
 ```{r}
 #looking at how many people who migrated were of what age group generally 
@@ -169,25 +180,6 @@ ggplot(age_comparison, aes(x=age_group, y=n, color=factor(wave)))+
 ```
 <br>
 
-When disaggregated by waves, the pattern differs. [This graph looks strange, check back here: it's saying that there are more migrants that are 50 years + which is not at all true]
-```{r}
-#looking at how many people who migrated were of what age according to wave
-#age_wave_comparison <- fb %>% group_by(wave, age_group) %>% summarise(n = sum(expat_population))
-
-ggplot(data=age_comparison, aes(x=wave, y=n/1e6, fill=factor(age_group))) +
-  geom_bar(position="dodge", stat="identity") +
-  labs(y="count in millions", fill="age") +
-  scale_x_discrete(limits=factor(1:7)) +  
-  scale_fill_brewer(palette="Set1") +
-  coord_flip() 
-
-
-#ggplot(age_wave_comparison, aes(x=wave, y=n, fill=age_group)) +
-#  geom_col(position="dodge", stat="identity") +
-#    labs( x = "wave", y = "count", fill = "age") +
-#    coord_flip()+
-#    scale_x_discrete(name = "wave", limits=c(1,2,3,4,5,6,7)) 
-```
 
 ## **National FB population estimates**
 
@@ -195,7 +187,8 @@ Alexander et al use FB data to estimate the size of the US population. From thei
 
 In 2017, the US population was around 325 million according to the US Census Bureau [American Community Survey](https://data.census.gov/cedsci/table?tid=ACSDP1Y2017.DP05) and [Population Estimates Program](https://data.census.gov/cedsci/table?q=PEPANNRES%3A%20ANNUAL%20ESTIMATES%20OF%20THE%20RESIDENT%20POPULATION%3A%20APRIL%201,%202010%20TO%20JULY%201,%202019%20-%20FOR%20FULL%20ESTIMATES%20DETAIL,%20VISIT%20https%3A%2F%2Fwww.census.gov%2Fprograms-surveys%2Fpopest.html&tid=PEPPOP2019.PEPANNRES).
 
-Note: In the code, Alexander et al filter by Mexico, but it doesn't necessarily matter: all countries have the same total population.
+In the code, Alexander et al filter by Mexico, but it doesn't necessarily matter: all countries have the same total population. Here, we filter the clean data by origin (Mexico) and the regroup the data according to wave and date. 
+
 ```{r}
 ## estimate total facebook population by wave
 # filtering by Mexico but it doesn't matter - all countries are the same total population
@@ -219,6 +212,7 @@ ggplot(data=total_fb_pop, aes(x=wave, y=fb/1e6)) +
 ```
 
 We provide another way to estimate US population count using FB data here (the results are the same as above):
+
 ```{r, eval=FALSE}
 # alternatively
 fb %>%
@@ -273,6 +267,23 @@ mig_flow <- fb %>% filter(wave == 4 & origin %in% c("Mexico", "India", "Puerto R
 
 #putting our data into the mig_chord function 
 mig_flow %>% mig_chord()
+
+```
+
+When we compare the the migration patterns of those in the FB data set for Waves 4 and 5 (Hurricaine Maria occurs in this time period), we find a slight increase in Puerto Rican migrants to Florida. We see a slight decrease in migrants to California and Texas. 
+
+We restrict the origin to Puerto Rico, filtering by waves 4 & 5 and the states that are popular relocation sites. 
+
+```{r}
+#selecting relevant variables: you need these three for a chord chart
+mig_flow4 <- fb %>% filter(wave==4, origin== "Puerto Rico", state=="Texas"|state=="Florida"|state=="New Jersey"|state=="New York"|state=="Pennsylvania"|state=="Connecticut"|state=="Illinois"|state=="California"|state=="Massachusetts"|state=="Washington") %>% select(origin, state, expat_population)
+
+mig_flow5 <- fb %>% filter(wave==5, origin== "Puerto Rico", state=="Texas"|state=="Florida"|state=="New Jersey"|state=="New York"|state=="Pennsylvania"|state=="Connecticut"|state=="Illinois"|state=="California"|state=="Massachusetts"|state=="Washington") %>% select(origin, state, expat_population)
+
+#putting our data into the mig_chord function 
+mig_flow4 %>% mig_chord()
+
+mig_flow5 %>% mig_chord()
 
 ```
 
@@ -986,7 +997,8 @@ acs_prop_age %>% filter(origin=="Puerto Rico") %>%
 
 ```
 
-## State diff-in-diff estimates of out-migrants from the US to PR
+## **State diff-in-diff estimates of out-migrants from the US to PR**
+
 Making the same assumption as above, Alexander et al also find that there is a decrease in the Puerto Rican population in Florida and Texas (the states with the greatest in-migration during the hurricane). Other states like California and New York, saw an increase of Puerto Rican migrants during this time.
 
 ```{r}
