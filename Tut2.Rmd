@@ -26,9 +26,9 @@ knitr::opts_chunk$set(echo = TRUE, message=FALSE, warning=FALSE)
 
 # **Introduction & Set-up** 
 
-Today, we will be going through [The Impact of Hurricane Maria on Out-migration from Puerto Rico: Evidence from Facebook Data](https://www.jstor.org/stable/pdf/45216967.pdf). The GitHub Repository can be found [here](https://canvas.uw.edu/courses/1549181/modules/items/15393060).The GitHub Repository for this tutorial can be found [here](https://github.com/aryaa-rajouria/FB_Migration_Hurricane_Maria_Tutorial).
+Today, we will be going through [The Impact of Hurricane Maria on Out-migration from Puerto Rico: Evidence from Facebook Data](https://www.jstor.org/stable/pdf/45216967.pdf). The GitHub Repository can be found [here](https://canvas.uw.edu/courses/1549181/modules/items/15393060). The GitHub Repository for this tutorial can be found [here](https://github.com/aryaa-rajouria/FB_Migration_Hurricane_Maria_Tutorial).
 
-In this paper, Alexander et al use Facebook advertising data to estimate migration of Puerto Ricans to the continental United States after Hurricane Maria. Given the large scale use of Facebook in Puerto Rico, they argue that using Facebook data is appropriate in this instance. They collect Facebook demographic data every 2-3 months (they have six waves in total) from January 2017 to March 2018. Hurricane Maria took place between September 2017 and October 2017, enabling the authors to see the effect of the hurricane on the population demographics. They use a difference-in-differences model to compare the size of the population before and after the hurricane, finding that between October 2017 and January 2018, there was a 17% increase in the number of migrants from Puerto Rico the the continental United States--with the most migrating to Florida. They also find that there were more male migrants than females, and there were more in younger working age groups. They also find that after the hurricane, 1.8% of migrants returned to Puerto Rico. The findings aligned with prior research. 
+In this paper, Alexander et al use Facebook advertising data to estimate migration of Puerto Ricans to the continental United States after Hurricane Maria. Given the large scale use of Facebook in Puerto Rico, they argue that using Facebook data is appropriate in this instance. They collect Facebook demographic data every 2-3 months (they have six waves in total) from January 2017 to March 2018. Hurricane Maria took place between September 2017 and October 2017, enabling the authors to see the effect of the hurricane on the population demographics of Puerto Rico. They use a difference-in-differences model to compare the size of the Puerto Rican and continental US populations before and after the hurricane, finding that between October 2017 and January 2018, there was a 17% increase in the number of migrants from Puerto Rico the the continental United States--with the most migrating to Florida. They also find that there were more male migrants than females, with many being younger, i.e. in working age groups. They also find that after the hurricane, 1.8% of migrants returned to Puerto Rico. The findings aligned with prior research. 
 
 A few examples of instances in which the Facebook Ads Manager has previously been used include: 
 
@@ -40,13 +40,12 @@ A few examples of instances in which the Facebook Ads Manager has previously bee
 In this R Tutorial, we will be using the data Alexander et al. provide on GitHub for replicability. We will not be extracting new data from the Facebook API. However, this is the general process: 
 
 1. Access the Web Interface of the Marketing API [here](https://www.facebook.com/adsmanager/manage/campaigns?act=147920879) and define attributes.
-2. Requires Python: install the pySocialWatcher which can be found [here](https://github.com/maraujo/pySocialWatcher).
-2. Create a developer account and obtain an [access token](developers.facebook.com/tools/accesstoken) as a Facebook developer.
-3. Access Facebook data that is publicly [available](https://developers.facebook.com/docs/graph-api) if want to collect data on anything that is available publicly
+1. Create a developer account and obtain an [access token](https://developers.facebook.com/tools/accesstoken) as a Facebook developer.
+1. Access Facebook data that is publicly [available](https://developers.facebook.com/docs/graph-api) if want to collect data on anything that is available publicly
+1. Requires Python: install the pySocialWatcher which can be found [here](https://github.com/maraujo/pySocialWatcher).
 
-For more information on how to extract data from the Facebook Ads Manager API using R see [this guide](https://worldbank.github.io/connectivity_mapping/facebook_nbs/pipeline.html).
 
-You may find more information on how to extract FB data using the API & Python: [here](https://developers.facebook.com/docs/graph-api/overview/), [here](https://developers.facebook.com/blog/post/2017/04/18/graph-api-v2.9/), and [here](https://towardsdatascience.com/how-to-use-facebook-graph-api-and-extract-data-using-python-1839e19d6999). 
+For more information on how to extract data from the Facebook Ads Manager API using Python see [this guide](https://worldbank.github.io/connectivity_mapping/facebook_nbs/pipeline.html) and the information [here](https://developers.facebook.com/docs/graph-api/overview/), [here](https://developers.facebook.com/blog/post/2017/04/18/graph-api-v2.9/), and [here](https://towardsdatascience.com/how-to-use-facebook-graph-api-and-extract-data-using-python-1839e19d6999). 
 
 ## Load in Necessary Libraries 
 
@@ -58,21 +57,20 @@ library(kableExtra)      # for making pretty tables
 library(RColorBrewer)    # for color palettes
 library(lubridate)       # for time data
 library(rnaturalearth)   # for world shapefile
-library(sf)              # simple feature mapping
+library(sf)              # for simple feature mapping
 library(mapview)         # for simple interactive mapping
 library(tmap)            # for interactive mapping
 library(tidyverse)       # for data wrangling  
-#library(ggplot2)        # for pretty graphs 
 library(viridis)         # for plot colors
 library(migest)          # for migration visualization 
-library(dplyr)           # for magritte 
+
 ```
 
 # **Facebook Data** 
 
 ## Loading in the Facebook Data
 
-Next, we will load in the FB data from GitHub, wrangle the data into the format we want, and then create the different waves. 
+Next, we will load in the FB data from GitHub, wrangle the data into the format we want, and add in wave information. 
 
 ```{r, results='hide'}
 ## load the raw facebook data
@@ -117,134 +115,46 @@ fb <- fb %>%
    head(fb)# note the date format on the date column; not numerical but in data format 
 ```
 
-The FB data is in long format, and has an observation (row) for each state-country of origin-sex-age group combination. There are a total of 176,400 rows: one for each combination of wave (7), sex (2), 5-year age groups (9), states (50; DC is not included), and country of origin (28).
+The FB data is in long format, and has an observation (row) for each wave-state-country of origin-sex-age group combination. There are a total of 176,400 rows: one for each combination of wave (7), sex (2), 5-year age groups (9), states (50; DC is not included), and country of origin (28).
 
-Note: The data from waves 6 and 7 contain a significant number of "1000"s in the `expat_population` column (estimated number of migrants), which is suggestive of bottom-coding. In earlier waves, it appears the corresponding bottom-code count was "20". It is possible the large numbers of "20"s in the earlier waves, and "1000"s in later waves, may be hiding other potential issues. In general, the FB `expat_population` estimates clearly involve some rounding.
+Data note: The data from waves 6 and 7 contain a significant number of "1000"s in the `expat_population` column (estimated number of migrants), which is suggestive of bottom-coding. In earlier waves, it appears the corresponding bottom-code count was "20". It is possible the large numbers of "20"s in the earlier waves, and "1000"s in later waves, may be hiding other potential data issues. In general, the FB `expat_population` and `facebook_population` estimates clearly involve some rounding.
 
+Here are some descriptives and visualizations to better understand the clean data. Each new 'wave' of data is collected on the first of the month, every couple of months.
 
-## Descriptives
+Because the data contains an observation for each state-country of origin-sex-age group combination, and there is evidence of bottom coding and data suppression, the estimates below are biased. This is especially obvious from the estimates for waves 6 and 7.
 
-Here are some descriptives and visualizations to better understand the clean data. Each new 'wave' of data is collected on the first of the month, every couple of months. As is evident from the table below, the number of migrants (called expat_population) is similar from Wave 1 to Wave 5. There is a decrease from Wave 5 to Wave 6. Wave 6 and Wave 7 are more similar to each other. 
-
-Because the data contains an observation for each state-country of origin-sex-age group combination, and there is evidence of bottom coding and data suppression, the estimates below are likely overestimates. This is especially obvious from the estimates for waves 6 and 7.
-
-```{r}
-#looking at migrant count by date: helps us see what 'dates' are what 'waves'
-mig_count <- fb %>% group_by(wave, date) %>% summarise(n = sum(expat_population))
-kable(mig_count, 
-      format.args=list(big.mark=','), col=c("Wave", "Date", "Count")) %>%
-  kable_paper()
-```
-
-<br>
-
-When we disaggregate the data by different waves, we also find that there are differences in the migration experiences of males and females. In general, there are slightly more male migrants than female migrants. This difference is a little more accentuated in Wave 1, Wave 3, Wave 5 and Wave 6. 
-
-To do this, we group by wave and sex, adding the number of migrants (expat_population) in the FB data set. We then use ggplot2 to create a bar graph to visualize these differences. 
-
-```{r}
-#looking at how many people who migrated were male vs female according to wave 
-sex_wave_comparison <- fb %>% group_by(wave, sex) %>% summarise(n = sum(expat_population))
-
-#graphing waves 
-sex_wave_comparison$wave_factor<- factor(sex_wave_comparison$wave)
-sex_wave_comparison$sex_character<- as.character(sex_wave_comparison$sex)
-ggplot(sex_wave_comparison, aes(fill=sex_character, y=n, x=wave)) + 
-    geom_bar(position="dodge", stat="identity") +
-    scale_fill_brewer(palette="Dark2") +
-    labs( x = "wave", y = "count", fill = "sex") +
-    coord_flip()+
-    scale_x_discrete(name = "wave", limits=c(1,2,3,4,5,6,7)) +
-    scale_fill_discrete(name = "sex", labels = c("male", "female"))
-    
-```
-
-Now, we will examine the age patterns of migrants within the different waves. As per the table and graph below, of all the migrants in the Facebook data, there were more migrants in their mid-20s and mid-30s compared to younger (teenagers) or older (past 50) populations. All of the waves had similar age patterns. 
-
-```{r}
-#looking at how many people who migrated were of what age group generally 
-age_comparison <- fb %>% group_by(age_group, wave, date) %>% summarise(n = sum(expat_population))
-
-kable(age_comparison %>%
-        mutate(wave = paste("wave", wave, date, sep="_")) %>%
-        select(-date) %>%
-        pivot_wider(names_from=wave, values_from=n), 
-      format.args=list(big.mark=',')) %>%
-  kable_paper()
-
-ggplot(age_comparison, aes(x=age_group, y=n, color=factor(wave)))+
-  geom_line() +
-  #geom_bar(position="dodge", stat= "identity", fill="#69b3a2") +
-  labs(x = "Age", y = "Count", color="wave")
-
-```
-<br>
-
-We will now use chord maps to map out migration patterns. When we compare the the migration patterns of those in the FB data set for Waves 4, 5, and 6. Hurricaine Maria occurs between Waves 4 and 5. Between Waves 4 and 5, we find a slight increase in Puerto Rican migrants to Florida. We see a slight decrease in migrants to California and Texas. Waves 5 and 6 are very similar abet an increased migration flow to Washington (we will look at this in detail later in this tutorial).
-
-We restrict the origin to Puerto Rico, filtering by waves 4 & 5 and the states that are popular relocation sites.
-
-*Wave 4*
-```{r}
-#selecting relevant variables: you need these three for a chord chart
-mig_flow4 <- fb %>% filter(wave==4, origin== "Puerto Rico", state=="Texas"|state=="Florida"|state=="New Jersey"|state=="New York"|state=="Pennsylvania"|state=="Connecticut"|state=="Illinois"|state=="California"|state=="Massachusetts"|state=="Washington") %>% select(origin, state, expat_population)
-
-#putting our data into the mig_chord function 
-mig_flow4 %>% mig_chord()
-```
-
-*Wave 5*
-```{r}
-mig_flow5 <- fb %>% filter(wave==5, origin== "Puerto Rico", state=="Texas"|state=="Florida"|state=="New Jersey"|state=="New York"|state=="Pennsylvania"|state=="Connecticut"|state=="Illinois"|state=="California"|state=="Massachusetts"|state=="Washington") %>% select(origin, state, expat_population)
-
-mig_flow5 %>% mig_chord()
-
-```
-
-*Wave 6*
-```{r}
-#selecting relevant variables: you need these three for a chord chart
-mig_flow6 <- fb %>% filter(wave==6, origin== "Puerto Rico", state=="Texas"|state=="Florida"|state=="New Jersey"|state=="New York"|state=="Pennsylvania"|state=="Connecticut"|state=="Illinois"|state=="California"|state=="Massachusetts"|state=="Washington") %>% select(origin, state, expat_population)
-
-#putting our data into the mig_chord function 
-mig_flow6 %>% mig_chord()
-```
-
-
-## National FB population estimates
+## Total US population
 
 Alexander et al use FB data to estimate the size of the US population. From their estimations, there seems to be a general decrease in the coverage of the US population from Wave 1 to Wave 7, with an particular decrease in Wave 5. These estimations are clearly an undercount compared to population estimates by the US Census Bureau. 
 
 In 2017, the US population was around 325 million according to the US Census Bureau [American Community Survey](https://data.census.gov/cedsci/table?tid=ACSDP1Y2017.DP05) and [Population Estimates Program](https://data.census.gov/cedsci/table?q=PEPANNRES%3A%20ANNUAL%20ESTIMATES%20OF%20THE%20RESIDENT%20POPULATION%3A%20APRIL%201,%202010%20TO%20JULY%201,%202019%20-%20FOR%20FULL%20ESTIMATES%20DETAIL,%20VISIT%20https%3A%2F%2Fwww.census.gov%2Fprograms-surveys%2Fpopest.html&tid=PEPPOP2019.PEPANNRES).
 
-In the code, Alexander et al filter by Mexico, but it doesn't necessarily matter: all countries have the same total population. Here, we filter the clean data by origin (Mexico) and the regroup the data according to wave and date. 
 
 ```{r}
 ## estimate total facebook population by wave
 # filtering by Mexico but it doesn't matter - all countries are the same total population
+# (i.e. the facebook_population count is unique only for each specific combination of age-sex-state-wave)
 
 # this is the total (fb) population per state-age-sex-wave combination
 total_fb_pop <- fb %>% filter(origin=="Mexico") %>% group_by(wave, date) %>% summarise(fb = sum(facebook_population))
 
 #creating a table of the total fb pop
 kable(total_fb_pop, 
-      format.args=list(big.mark=','), col=c("wave", "date", "estimated US pop")) %>%
+      format.args=list(big.mark=','), col.names=c("wave", "date", "estimated US pop")) %>%
   kable_paper()
 
 #using ggplot to visualize fb pop estimations by wave
 ggplot(data=total_fb_pop, aes(x=wave, y=fb/1e6)) +
   geom_line()+
   geom_point()+
-  labs(title="Estimating coverage of the US Population Using FB data",x="Waves", y = "Population Estimate in millions") +
+  labs(title="Estimated US Population Using FB data",x="Waves", y = "Population Estimate in millions") +
   scale_x_continuous(name = "wave", breaks=seq(1:7)) +
   theme(panel.grid.minor.x = element_blank())
 
 ```
 
-We provide another way to estimate US population count using FB data here (the results are the same as above):
-
 ```{r, eval=FALSE}
-# alternatively
+# alternatively the estimated fb population can be calculated using the following
 fb %>%
   # remove duplicate entries
   distinct(state, age_group, sex, wave, facebook_population, date) %>%
@@ -255,7 +165,42 @@ fb %>%
 ```
 
 
-## National FB expat populations {#expatpopsize}
+## Total expats
+Similarly, the FB data can be used to estimate the size of the immigrant population in the US (FB calls this the expat population).  As is evident from the table below, the number of migrants in the US is steady from Wave 1 to Wave 5. There is a decrease from Wave 4 to Wave 5. Wave 6 and Wave 7 are more similar to each other. 
+
+```{r}
+#looking at migrant count by date: helps us see what 'dates' are what 'waves'
+mig_count <- fb %>% group_by(wave, date) %>% summarise(n = sum(expat_population))
+kable(mig_count, 
+      format.args=list(big.mark=','), col=c("Wave", "Date", "Count")) %>%
+  kable_paper()
+```
+
+## Expats by age
+
+Now, we will examine the age patterns of migrants within the different waves. The FB data only contains information on individuals between the ages of 15 to 59. As per the table and graph below, of all the migrants in the Facebook data, there were more migrants in their mid-20s and mid-30s compared to younger (teenagers) or older (past 50) populations. All of the waves had similar age patterns. 
+
+```{r}
+#looking at how many people who migrated were of what age group generally 
+age_comparison <- fb %>% group_by(age_group, wave, date) %>% summarise(n = sum(expat_population))
+
+kable(age_comparison %>%
+        mutate(wave = paste("wave", wave, date, sep="_")) %>%
+        select(-date) %>%
+        pivot_wider(names_from=wave, values_from=n), 
+      format.args=list(big.mark=','), 
+      caption="estimated age distribution of the migrant population in the US, based on FB advertising data") %>%
+  kable_paper()
+
+ggplot(age_comparison, aes(x=age_group, y=n, color=factor(wave)))+
+  geom_line() +
+  #geom_bar(position="dodge", stat= "identity", fill="#69b3a2") +
+  labs(x = "Age", y = "Count", color="wave")
+
+```
+
+
+## Expats by country of origin {#expatpopsize}
 
 The FB data contains estimates of expats from 28 countries.
 
@@ -265,12 +210,10 @@ The FB data contains estimates of expats from 28 countries.
 
 ```
 
-
-In the FB data, we find the largest number of migrants in the US are of Mexican origins. This is true for all 7 waves (from January 2017 to July 2018). Notably, the number of Mexican migrants is significantly larger than the estimated migrant population from the other 27 origin countries. 
+Broken down by country of origin, we see the largest number of migrants in the US are of Mexican origins. This is true for all 7 waves (from January 2017 to July 2018). Notably, the number of Mexican migrants is significantly larger than the estimated migrant population from the other 27 origin countries. 
 
 There is a marked a marked difference in the number of migrants from Puerto Rico between Waves 3 and 4, 4 and 5, and beyond Wave 5.
 
-Note: There is a difference in counts between Waves 5 and 6 (and a extreme similarity between Waves 6 and 7). This illustrates that FB data isn't always stable: it can suddenly change. Alexander et al note that a limitation is the opaqueness of the Facebook algorithm or shift in privacy policies. For example, it is interesting to note that the Cambridge Analytica data scandal (where the personal data belonging to millions of Facebook users was collected without their consent) occurred in March 2018 (during Wave 6). Perhaps the increase in media attention regarding social media privacy policies spurred Facebook to change their algorithms, shift their estimates, or change how data is shared in the Ads manager (i.e. bottom-coding, rounding).
 
 ```{r}
 ## size of expat groups in the us, according to the fb data
@@ -282,21 +225,50 @@ fb.expat <- fb %>% #filter(wave <= 5) %>%  # the counts for waves 6 and 7 look v
   pivot_wider(names_from=wave, values_from=expat_pop) 
 
 fb.expat %>%
-  kable(format.args=list(big.mark=',')) %>%
+  kable(format.args=list(big.mark=','), caption="estimated migrant population in the US by country of origin, based on FB advertising data") %>%
   kable_paper("hover")
 
 ```
 
+Data note: There is a large difference in counts between Waves 5 and 6 (and similarity between Waves 6 and 7). This illustrates that FB data isn't always stable: it can suddenly change. Alexander et al note that a limitation is the opaqueness of the Facebook algorithm or shift in privacy policies. For example, it is interesting to note that the Cambridge Analytica data scandal (where the personal data belonging to millions of Facebook users was collected without their consent) occurred in March 2018 (during Wave 6). Perhaps the increase in media attention regarding social media privacy policies spurred Facebook to change their algorithms, shift their estimates, or change how data is shared in the Ads manager (i.e. bottom-coding, rounding).
 
-We now create a chord map to visualize the migration patterns of those in the FB data set. As is clearly evident from the chart, many migrants are coming from Mexico and India. California and New Jersey are popular relocation sites. 
+We now create a chord map to visualize the migration patterns of those in the FB data set. Examining just the 3 largest migrant groups in the US, as well as Puerto Rico, for wave 4 (October 2017), we see that 
+
+* California and Texas are especially popular destinations for those from **Mexico**
+* California is a popular relocation site among those from **India**
+* California is the top destination among immigrants from the **Philippines**
+* Florida is the top destination for immigrants from **Puerto Rico**
 
 ```{r}
 #selecting relevant variables: you need these three for a chord chart
 # this is wave 4 only
-mig_flow <- fb %>% filter(wave == 4 & origin %in% c("Mexico", "India", "Puerto Rico")) %>% group_by(state, origin) %>% summarize(expat_population = sum(expat_population), .groups='drop') 
+mig_flow <- fb %>% filter(wave == 4 & origin %in% c("Mexico", "India", "Philippines", "Puerto Rico")) %>% group_by(state, origin) %>% summarize(expat_population = sum(expat_population), .groups='drop') 
 
 #putting our data into the mig_chord function 
 mig_flow %>% mig_chord()
+
+```
+
+Focusing on just migrants from Puerto Rico, we see that in wave 4 (Oct 2017), California, Connecticut, Florida, Georgia, Illinois, Massachusetts, New Jersey, New York, North Carolina, Ohio, Pennsylvania, Texas, Virginia, and Wisconsin appear to be popular destinations. 
+
+```{r}
+# wave 4 pr
+mig_flow4 <- fb %>% filter(wave==4, origin== "Puerto Rico" ) %>% #, state=="Texas"|state=="Florida"|state=="New Jersey"|state=="New York"|state=="Pennsylvania"|state=="Connecticut"|state=="Illinois"|state=="California"|state=="Massachusetts"|state=="Washington") %>% 
+  select(origin, state, expat_population)
+
+#putting our data into the mig_chord function 
+mig_flow4 %>% mig_chord()
+
+```
+
+We see similar patterns in wave 5 (Jan 2018).
+
+```{r}
+## wave 5
+mig_flow5 <- fb %>% filter(wave==5, origin== "Puerto Rico") %>%#, state=="Texas"|state=="Florida"|state=="New Jersey"|state=="New York"|state=="Pennsylvania"|state=="Connecticut"|state=="Illinois"|state=="California"|state=="Massachusetts"|state=="Washington") %>% 
+  select(origin, state, expat_population)
+
+mig_flow5 %>% mig_chord()
 
 ```
 
@@ -306,7 +278,7 @@ mig_flow %>% mig_chord()
 
 Here, we use the FB data to see what it says about the migrant population in Washington. First, we estimate total migrant population. Then, we take a closer look at the migrant population in Washington by country of origin.  
 
-When estimating migrant population in Washington, we find a steady increase from Wave 1 to Wave 5. Then, there is a sharp increase between Wave 5 and Wave 6. This could suggest that the data may not be the most reliable for smaller groups, illustrating a potentially significant barrier in using FB data for research. As a result, we leave out waves 6 and 7 when estimating the migration population in Washington according to country of origin. While there are slight fluctuations over time, a majority of the migrants are coming from Mexico, India, Vietnam, China, and Canada. The number of migrants coming from Mexico to Washington are significantly larger than those from other countries.  
+When estimating migrant population in Washington, we find a steady increase from Wave 1 to Wave 5, while the total population in WA is declining. Then, there is a sharp increase in the migrant population between Wave 5 and Wave 6. This suggests that the total count data may not be very reliable for smaller migrant groups, illustrating a potentially significant barrier in using FB data for research. As a result, we leave out waves 6 and 7 when estimating the migration population in Washington according to country of origin. While there are slight fluctuations over time, a majority of the migrants are coming from Mexico, India, Vietnam, China, and Canada. The number of migrants coming from Mexico to Washington are significantly larger than those from other countries.  
 
 ```{r}
 ## estimated wa population by wave, according to fb
@@ -348,11 +320,12 @@ fb %>%
 
 
 ## Maps
-### Static map
 
 Maps are a great way to visualize migration patterns. Static maps are the most straight-forward way to showcase a map. 
 
-Here, we look at the migration experiences during Wave 4 (this is when Hurricane Maria took place). The maps visually show what we found earlier: that the [estimated population size](#expatpopsize) for migrants from Mexico is much larger than those from other countries. To attenuate the difference in the map, the population size is logged. It's also important to remember that the FB data only covers 28 countries: it is not the case that there are no migrants from the entire African continent or Latin America. The visualization make this discrepancy more clear.  
+**ggplot2**
+
+Here, we look at the data for Wave 4 (this is when Hurricane Maria took place). The maps visually show what we found earlier: that the [estimated population size](#expatpopsize) for migrants from Mexico is much larger than those from other countries. To attenuate the numerical difference, the logged population size is displayed on the map. It's also important to remember that the FB data only covers 28 countries: it is not the case that there are no migrants from the entire African continent or Latin America.  
 
 ```{r}
 ## plot the data on expat groups
@@ -383,9 +356,8 @@ fb.pop.counts.w4 %>%
 
 ```
 
-### Interactive maps
 
-Unlike static maps, interactive maps allow the user to zoom in and out, identify specific features, or query underlying data or indicator (i.e. socioeconomic status). Here, we created a quick and simple interactive map for exploratory data analysis on the spatial context, first using the `mapview` library, then the `tmap` library.
+Unlike static maps, interactive maps allow the user to zoom in and out, identify specific features, or query underlying data or indicator (i.e. socioeconomic status). Here, we created a quick and simple interactive map for exploratory data analysis, first using the `mapview` library, then the `tmap` library.
 
 
 **mapview**
@@ -411,17 +383,17 @@ world %>%
 
 ```
 
-Hovering over a country will give the estimated migrant population size from that country.
+Hovering over one of the shaded countries will give the estimated migrant population size from that country.
 
 **tmap**
 
 The `tmap` library can be used to create both static and interactive maps. Static maps are the default.
 
-```{r}
+```{r, echo=TRUE}
 #require(tmap)
 ## create static tmap
 
-tmap_options(check.and.fix = TRUE)
+#tmap_options(check.and.fix = TRUE)
 
 world %>% 
   sf::st_transform(crs=4326) %>%  
@@ -435,9 +407,9 @@ world %>%
 
 ```
 
-To create an interactive map, specify the mode to `view` using `tmap_mode("view")`. (To toggle it back to static maps, use `tmap_mode("plot")`.) The same code is used to generate the static and interactive maps.
+To create an interactive map, specify the mode to `view` using the command `tmap_mode("view")`. To toggle it back to static maps, use `tmap_mode("plot")`. The same code is used to generate the static and interactive maps.
 
-```{r}
+```{r, echo=TRUE}
 ## create interactive map displaying fb estimates by country of origin
 tmap_mode("view")   # interactive mode
 #tmap_mode("plot")  # static map (this is the default)
@@ -455,13 +427,13 @@ world %>%
 
 ```
 
-Clicking on the country will generate a popup that shows the estimated size of the migrant population from that country.
+Clicking on a country will generate a popup that shows the estimated size of the migrant population from that country.
 
 ---
 
 # **American Community Survey (ACS) data**
 
-The code provided by Alexander et al on the GitHub repo indicates they downloaded the 2017 1-year ACS data with sex, age, birthplace (bpl), and state (statefip) variables from [IPUMS](https://usa.ipums.org/usa/). They then perform Some data cleaning (the code needed for cleaning the data is available on their Github repo).
+The code provided by Alexander et al on the GitHub repo indicates they downloaded the 2017 1-year ACS data with sex, age, birthplace (bpl), and state (statefip) variables from [IPUMS](https://usa.ipums.org/usa/). They then perform some data cleaning (the code needed for cleaning the data is available on their Github repo).
 
 We read in the pre-saved ACS 2017 1 year data here: 
 
@@ -472,15 +444,16 @@ acs_prop_age <- read_csv("https://raw.githubusercontent.com/MJAlexander/fb-migra
 
 ```
 
-Alexander et al note that FB data is not representative of the broader population and it is difficult for the findings to be generalizable. However, the ACS is designed to be nationally representative. Therefore, the comparison of the FB estimates with the ACS estimates enables us to assess this potential bias. 
 
 ---
 
-# Comparing FB and ACS data
+# **Comparing FB and ACS data**
+
+Alexander et al note that FB data is not representative of the broader population and it is difficult for the findings to be generalizable. However, the ACS is designed to be nationally representative. Therefore, the comparison of the FB estimates with the ACS estimates enables us to assess this potential bias. 
 
 ## National level differences
 
-It is important to note that the FB data encapsulates only 28 different countries. When looking at this data, we see that there are differences in the number of estimated migrants when compared to that of the ACS. There are 10 countries where the FB estimate is greater than the ACS estimate. For the remaining 18 countries, the ACS estimate is larger than the FB estimate. This indicates a misalignment between the data sources. 
+It is important to recall that the FB data encapsulates only 28 different countries. When looking at this data, we see that there are differences in the number of estimated migrants when compared to that of the ACS. There are 10 countries where the FB estimate is greater than the ACS estimate. For the remaining 18 countries, the ACS estimate is larger than the FB estimate. This indicates a misalignment between the data sources. 
 
 ```{r}
 ## national level estimates of number of "expats" in the acs, compared to fb estimates
@@ -506,7 +479,8 @@ kable(acs.fb.comp %>% select(1:4), format.args=list(big.mark=',')) %>%
 
 ```
 
-Note: in the table above, positive values indicate a larger ACS estimate and negative values suggest larger FB values. 
+Note: in the table above, positive values indicate a larger ACS estimate and negative values suggest larger FB values.
+
 
 ```{r}
 ## map the results, to see if potential regional differences
@@ -523,7 +497,7 @@ world %>% left_join(acs.fb.comp, by=c("admin"="origin")) %>%
 
 ## State level differences
 
-When calculating the state-level differences, the authors exclude North Carolina from the analysis. They explain that it is in an anomaly. They also examined only states with 18,000+ PRs to avoid rounding issues. While the ACS and FB data have different migrant population estimates at the state level, most of them are comparable. However, the disparity between the two data sets are a slightly greater (indicating a greater misalignment) for Connecticut and New Jersey. Florida, New York, and Pennsylvania have the largest number of migrants coming in to the state.  
+When examining differences in the PR expat population by state, the authors exclude North Carolina from the analysis. They explain that it is in an anomaly. They also examined only states with 18,000+ PRs to avoid rounding issues. For these 11 states, while the ACS and FB data do yield different migrant population estimates at the state level, most of them are comparable. However, the disparity between the two data sets are slightly greater (indicating a greater misalignment) for Connecticut and New Jersey. The states with the largest PR populations are Florida, New York, and Pennsylvania.  
 
 ```{r}
 # 4. Top states based on PR population --------------------------------
@@ -565,7 +539,7 @@ pr.state %>%
 ## Age distribution
 (Figure 1 from the paper)
 
-When examining the age distribution of the migrants, it is evident that in all the states, the ACS has an older age distribution while the Facebook distributions are greater for the under-30 age groups. The ACS trends differ in all age groups.  
+When examining the age distribution of male migrants in 9 states, it is evident that the ACS has an older age distribution while the Facebook distributions are greater for the under-30 age groups. The ACS trends differ in all age groups.  
 
 ```{r}
 # 7. age change -----------------------------------------------------------
@@ -594,9 +568,11 @@ acs_prop_age %>%
 
 ```
 
+(FB data represented by the red dashed line; ACS data by the solid black line.)
+
 ## Sex ratio
 
-As is evident in the table below, when we use the Facebook Data, the states with larger Puerto Rican populations showcase greater male to female sex ratios. However, it is important to note that this does not hold true for Texas and California. The Facebook sex ratios are generally greater than the ACS sex ratios, indicating higher proportions of men than the ACS. The following Table is Table 1 in the paper. The visualization showcases the difference in sex ratios by data source for selected states. 
+The following Table is Table 1 in the paper. It compares the sex ratio estimated from the 2017 ACS with the FB data from wave 1 (Jan 2017). The Facebook sex ratios are generally larger than the ACS sex ratios, indicating higher proportions of men than women. The visualization compares the difference in estimated sex ratios by data source for selected states. 
 
 ```{r}
 # 8. sex ratios -----------------------------------------------------------
@@ -609,12 +585,12 @@ sr.nat <- acs_prop_age %>%
   group_by(state, pr, sex) %>%
   summarise( no_mig = sum( no_mig, na.rm = T)) %>% 
   group_by(state, pr) %>% 
-  # acs sex ratio
+  # acs sex ratio (2017)
   summarise(sr_acs = no_mig[sex==1]/no_mig[sex==2]) %>% 
   group_by(state) %>% 
   filter(state %in% c("Florida", "New York", "New Jersey", 
                       "Pennsylvania", "Illinois", "California", "Connecticut",
-                      "Texas", "Massachusetts")) %>% 
+                      "Texas", "Massachusetts", "Ohio", "Georgia")) %>% 
   left_join(fb %>% 
               mutate(pr = ifelse(origin== "Puerto Rico", 1, 0)) %>% 
               mutate(expat_population = ifelse(state=="Connecticut"&age_group==35&wave==4&sex==1&pr==1, 4300, expat_population)) %>% 
@@ -624,8 +600,8 @@ sr.nat <- acs_prop_age %>%
               summarise(sr_fb = expat_population[sex==1]/expat_population[sex==2]) %>%  # fb sex ratio (m:f)
               filter(state %in% c("Florida", "New York", "New Jersey", 
                                   "Pennsylvania", "Illinois", "California", "Connecticut",
-                                  "Texas", "Massachusetts"), wave<6)) %>%  ungroup() %>%
-  filter(pr==1, wave==1) %>% select(-pr, -wave)
+                                  "Texas", "Massachusetts", "Ohio", "Georgia"), wave<6)) %>%  ungroup() %>%
+  filter(pr==1, wave==1) %>% select(-pr, -wave)  # oct 2017
 
 ## table comparing sex ratio in acs data vs fb data (table 1 in the paper)
 sr.nat %>%
@@ -652,7 +628,7 @@ sr.nat %>%
 
 # **Analysis: Difference-in-Differences estimation**
 
-Difference-in-differences models are panel data methods applied when we are attempting to understand the effect of a particular treatment. Difference-in-differences models are used when some samples are exposed to a treatment and others are not. In this study, Alexander et al used difference-in-differences to estimate the percent change in Puerto Rican migrants in the continental US after Hurricane Maria. They choose this method to overcome issues of non-representativness and fluctuations in the data over time (indpendent of migration events). 
+Difference-in-differences models are panel data methods applied when we are attempting to understand the effect of a particular treatment. Difference-in-differences models are used when some groups are exposed to a treatment and others are not. In this study, Alexander et al used difference-in-differences to estimate the percent change in Puerto Rican migrants in the continental US after Hurricane Maria. They choose this method to overcome issues of non-representativness and fluctuations in the data over time (indpendent of migration events). 
 
 Difference-in-difference models haven been be used to study the effects of a [particular policy](https://diff.healthpolicydatascience.org/), in papers focused on the [economics of education](https://www-sciencedirect-com.offcampus.lib.washington.edu/science/article/pii/B978012815391800001X), and [labor economics](https://www-sciencedirect-com.offcampus.lib.washington.edu/topics/economics-econometrics-and-finance/difference-in-differences). 
 
@@ -662,7 +638,7 @@ $$
 $$
 where $g$ is the group of interest (age, sex, country of origin, state of residence). The authors are interested in assessing the difference in the size of the migrant population from Puerto Rico between waves 4 and 5, relative to the change in the size of the migrant population from all other countries, sans Mexico.
 
-The control group includes migrants from all other countries aside from Mexico, which is assumed to follow different migration motivations. Effectively, in using this estimator, we are comparing the change in PR migrant population in the US between waves with the change in population for all other migrants (but not Mexican immigrants).
+The diff-in-diff approach assumes the control group, which is not subject to the treatment (here, Hurricane Maria), will continue to exhibit similar responses, relative to the treatment group. The difference between groups is the effect of the treatment. The treatment group is Puerto Rican migrants, while the control group is composed of migrants from all other countries aside from Mexico, which is assumed to follow different migration motivations. Effectively, in using this estimator, we are comparing the change in the size of the PR migrant population in the US between waves 4 and 5 with the change in population for all other migrants (but not Mexican immigrants), also between waves 4 and 5.
 
 
 ## National diff-in-diff estimate of out-migration from Puerto Rico
@@ -712,12 +688,14 @@ res %>%
 
 ```
 
-### National estimate of PR out-migrants to the US
+## National estimate of PR out-migrants to the US
 
-Here, we take the estimate percent changes obtained from the difference-in-difference models and multiply them by the relevant populations reported in the ACS. This enables us to estimate the change in the *number* of migrants.
+The authors then take the estimate percent changes obtained from the difference-in-differences model and multiplies them by the relevant populations reported in the ACS. This enables us to estimate the change in the *number* of migrants.
 
 $$\hat{M}_{g} = \hat{\pi}_{g} \times P_{g}^{ACS}$$
-where $\hat{M_{g}}$ is the estimated number of migrants in group $g$, $\hat{\pi}_{g}$ is the proportional change in PR migrants in group $g$, and $P_{g}^{ACS}$ is the estimated number of PR migrants in group $g$ in the ACS.
+where $\hat{M_{g}}$ is the estimated number of migrants in group $g$, $\hat{\pi}_{g}$ is the proportional change in PR migrants in group $g$, and $P_{g}^{ACS}$ is the estimated number of PR migrants in group $g$ in the ACS. 
+
+(The 2017 ACS indicates there were 1,087,557 Puerto Ricans residing in the US.)
 
 
 ```{r}
@@ -736,7 +714,9 @@ acs_prop_age %>%
 
 ## State diff-in-diff estimates of in-migrants from PR
 
-As is evident form the difference in difference estimates of in-migrants from Puerto Rico: a majority migrate to the states that have an existing population of Puerto Rican migrants post Hurricane Maria. This can indicate community based migration/chain migration. In the code, it is important to note that in `expat_pop` = 20 seems to be some form of filler data - it gets excluded from the data, but the reasoning behind why is not explained. (This may be due to limited documentation with the Facebook data.) Parallel to above, North Carolina is also excluded (there isn't necessarily an explanation as to why).
+The authors then repeat the same approach at the state level, presenting results for states where the estimated PR population in the FB data exceeds 18,000.
+
+Data note: In the code, `expat_pop` = 20  seems to be some kind of bottom-code or placeholder for missing data or small counts (20 is the minimum count in the data). The authors only examine counts greater than 20 for their analysis, but this is not explained in the paper or the code. This may be due to limited documentation with the Facebook data. Additionally, North Carolina is also excluded from the analysis (there isn't an explanation as to why).
 
 ```{r}
 # 5a. State by state analysis (table) ----------------------------------------------
@@ -811,9 +791,14 @@ ex_props %>%
 
 ```
 
+The estimates suggest post Hurricane Maria, many Puerto Ricans were moving to the states that have an existing population of Puerto Rican migrants. This can indicate community based migration/chain migration. 
+
+
 ### Map
 
-The largest increase of Puerto Rican migrants were in Florida. 
+(Figure 2 in the paper)
+
+The largest increase of Puerto Rican migrants is in Florida. 
 
 ```{r}
 # 5b. State by state analysis (map) ---------------------------------------
@@ -846,11 +831,11 @@ states_map %>%
 ```
 
 
-## Age-specific analysis
+## Age-specific estimates of out-migrants from PR to the US
 
-### National estimates of out-migrants from PR (to the US)
+(Figure 3 in the paper)
 
-In terms of who migrated out of Puerto Rico after Hurricane Maria, there is an increase in the 15-29 year age range. There were fewer people above the age of 35 migrating out of Puerto Rico in a post-disaster context. 
+In terms of who migrated out of Puerto Rico after Hurricane Maria, there is an increase in those in the 15-29 year age range. There were fewer people above the age of 35 migrating out of Puerto Rico in a post-disaster context. 
 
 ```{r}
 # pr pop vs all other migrant pop, according to fb data
@@ -919,7 +904,9 @@ d_tot %>%
 
 ## Change in sex ratio of out-migrants from PR, by state
 
-There were larger numbers of men than women in all nine states: this did not dramatically change after the Hurricane. However, there were some states (i.e. Texas) that suggested an increase of male migrants than other states (i.e. Pennsylvania) that suggested an increase of female migrants. 
+(Table 3 in the paper)
+
+Pre- and post-hurricane, there were larger numbers of men than women in all nine states. However, there were some states (i.e. Texas) that show an increase of male migrants, while other states (i.e. Pennsylvania) saw an increase of female migrants. 
 
 ```{r}
 ## change in sex ratio between waves in the fb data, by state (table 3)
@@ -942,11 +929,12 @@ fb %>%
          se_diff = sqrt(sqrt(se[wave==5&pr==1]^2+se[wave==4&pr==1]^2) + sqrt(se[wave==5&pr==0]^2+se[wave==4&pr==0]^2))) %>%   
   filter(state %in% c("Florida", "New York", "New Jersey", 
                       "Pennsylvania", "Illinois", "Ohio", "Connecticut",
-                      "Texas", "Massachusetts", "Georgia", "California"), wave ==4, pr==1) %>% 
-  mutate(sex_ratio = round(sr,3), change = round(sr_diff,3), 
+                      "Texas", "Massachusetts", "Georgia", "California"), wave == 4, pr==1) %>%
+  mutate(sex_ratio=round(sr,3),
+         change = round(sr_diff,3), 
          lower = round(sr_diff - (2*se_diff),3), 
          upper = round(sr_diff + (2*se_diff),3)) %>% 
-  select(state, sex_ratio, change, lower, upper) %>% 
+  select(state, starts_with("sex_ratio"), change, lower, upper) %>% 
   arrange(-change) %>%
   kable() %>%
   kable_paper()
@@ -963,7 +951,7 @@ In estimating return migration, Alexander et al specifically look at the decreas
 
 Using this assumption the results indicate a 1.8 percent of Puerto Ricans that return to Puerto Rico after the hurricane.
 
-Note: Authors recognize that there is a rounding issue after Wave 5, thus keeping only those records with expat_population over 1000)
+Data note: Authors recognize that there is a rounding issue after Wave 5, thus keeping only those records with expat_population over 1000)
 
 ```{r}
 # 6. Return migration -----------------------------------------------------
@@ -1001,7 +989,7 @@ res_return <- ex_props_post_nat %>%
   mutate(ci_lower = percent_increase - (2*se), ci_upper = percent_increase + (2*se))
 
 res_return %>%
-  kable(digits=2) %>%
+  kable(digits=2, caption="estimated percentage change") %>%
   kable_paper()
 
 ## use these percentages with acs data to estimate number of return migrants to pr (at national level)
@@ -1017,7 +1005,7 @@ acs_prop_age %>% filter(origin=="Puerto Rico") %>%
 
 ## State diff-in-diff estimates of out-migrants from the US to PR
 
-Making the same assumption as above, Alexander et al also find that there is a decrease in the Puerto Rican population in Florida and Texas (the states with the greatest in-migration during the hurricane). Other states like California and New York, saw an increase of Puerto Rican migrants during this time.
+Making the same assumption as above, Alexander et al also find that there is a decrease in the Puerto Rican population in Florida and Texas (the states with the greatest in-migration during the hurricane). Other states like California and New York saw an increase of Puerto Rican migrants during this time.
 
 ```{r}
 # by state
