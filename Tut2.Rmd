@@ -35,17 +35,15 @@ A few examples of instances in which the Facebook Ads Manager has previously bee
 1. [Tracking cross-border migration in Europe during the Coronavirus pandemic](https://globalizationandhealth.biomedcentral.com/articles/10.1186/s12992-022-00832-6)
 2. [Using FacebookAds for election polling](https://dl.acm.org/doi/abs/10.1145/3323503.3349552)
 3. [To create estimates to improve global development statistics](https://www.itu.int/dms_pub/itu-s/opb/journal/S-JOURNAL-ICTF.VOL1-2018-2-P04-PDF-E.pdf)
-4. [To create global COVID-19 Surveys to aid in policy-making](https://csde.washington.edu/seminar/partnering-with-a-global-platform-toinform-research-and-public-policy-making-what-needs-to-be-in-place-to-make-a-global-covid-19-survey-work/) which was presented at the CSDE seminar series last year; the presentation can be viewed on YouTube [here](https://www.youtube.com/watch?v=t_hvQEYK9Xg).
+4. [To create global COVID-19 Surveys to aid in policy-making](https://csde.washington.edu/seminar/partnering-with-a-global-platform-toinform-research-and-public-policy-making-what-needs-to-be-in-place-to-make-a-global-covid-19-survey-work/) which was presented at the CSDE seminar series last year; the presentation can be viewed on [YouTube here](https://www.youtube.com/watch?v=t_hvQEYK9Xg).
 
-In this R Tutorial, we will be using the data Alexander et al. provide on GitHub for replicability. We will not be extracting new data from the Facebook API. However, this is the general process: 
+In this R Tutorial, we will be using the data Alexander et al. provide on their GitHub for replicability. We will not be extracting new data from the Facebook API. However, if you are interested in learning how to do that, this is the general process: 
 
-1. Access the Web Interface of the Marketing API [here](https://www.facebook.com/adsmanager/manage/campaigns?act=147920879) and define attributes.
-1. Create a developer account and obtain an [access token](https://developers.facebook.com/tools/accesstoken) as a Facebook developer.
-1. Access Facebook data that is publicly [available](https://developers.facebook.com/docs/graph-api) if want to collect data on anything that is available publicly
-1. Requires Python: install the pySocialWatcher which can be found [here](https://github.com/maraujo/pySocialWatcher).
+1. Access the Web Interface of the Marketing API [here](https://www.facebook.com/adsmanager/manage/campaigns?act=147920879) and define relevant attributes.
+2. Create a developer account and obtain an [access token](https://developers.facebook.com/tools/accesstoken) as a Facebook developer.
+3. Access Facebook data that is publicly [available](https://developers.facebook.com/docs/graph-api).
 
-
-For more information on how to extract data from the Facebook Ads Manager API using Python see [this guide](https://worldbank.github.io/connectivity_mapping/facebook_nbs/pipeline.html) and the information [here](https://developers.facebook.com/docs/graph-api/overview/), [here](https://developers.facebook.com/blog/post/2017/04/18/graph-api-v2.9/), and [here](https://towardsdatascience.com/how-to-use-facebook-graph-api-and-extract-data-using-python-1839e19d6999). 
+For more information on how to extract data from the Facebook Ads Manager API using Python see [this guide](https://worldbank.github.io/connectivity_mapping/facebook_nbs/pipeline.html) and the information [here](https://developers.facebook.com/docs/graph-api/overview/), [here](https://developers.facebook.com/blog/post/2017/04/18/graph-api-v2.9/), and [here](https://towardsdatascience.com/how-to-use-facebook-graph-api-and-extract-data-using-python-1839e19d6999). The [Facebook Developers](https://developers.facebook.com) website provides comprehensive directions. When using access the Web Interface of the Marketing API using Python, you will need to install pySocialWatcher, which can be found on [GitHub](https://github.com/maraujo/pySocialWatcher).
 
 ## Load in Necessary Libraries 
 
@@ -63,6 +61,7 @@ library(tmap)            # for interactive mapping
 library(tidyverse)       # for data wrangling  
 library(viridis)         # for plot colors
 library(migest)          # for migration visualization 
+library(dplyr)           # because Aryaa's quirky R needs her to explicitly call it for it read in pipes 
 
 ```
 
@@ -119,7 +118,7 @@ The FB data is in long format, and has an observation (row) for each wave-state-
 
 Data note: The data from waves 6 and 7 contain a significant number of "1000"s in the `expat_population` column (estimated number of migrants), which is suggestive of bottom-coding. In earlier waves, it appears the corresponding bottom-code count was "20". It is possible the large numbers of "20"s in the earlier waves, and "1000"s in later waves, may be hiding other potential data issues. In general, the FB `expat_population` and `facebook_population` estimates clearly involve some rounding.
 
-Here are some descriptives and visualizations to better understand the clean data. Each new 'wave' of data is collected on the first of the month, every couple of months.
+We will now share some descriptives and visualizations to better understand the clean data. Each new 'wave' of data is collected on the first of the month, every couple of months.
 
 Because the data contains an observation for each state-country of origin-sex-age group combination, and there is evidence of bottom coding and data suppression, the estimates below are biased. This is especially obvious from the estimates for waves 6 and 7.
 
@@ -166,7 +165,7 @@ fb %>%
 
 
 ## Total expats
-Similarly, the FB data can be used to estimate the size of the immigrant population in the US (FB calls this the expat population).  As is evident from the table below, the number of migrants in the US is steady from Wave 1 to Wave 5. There is a decrease from Wave 4 to Wave 5. Wave 6 and Wave 7 are more similar to each other. 
+Similarly, the Facebook data can be used to estimate the size of the immigrant population in the US (Facebook calls this the expat population).  As is evident from the table below, the number of migrants in the US is steady from Wave 1 to Wave 5. There is a decrease from Wave 4 to Wave 5. Wave 6 and Wave 7 are more similar to each other. 
 
 ```{r}
 #looking at migrant count by date: helps us see what 'dates' are what 'waves'
@@ -178,7 +177,7 @@ kable(mig_count,
 
 ## Expats by age
 
-Now, we will examine the age patterns of migrants within the different waves. The FB data only contains information on individuals between the ages of 15 to 59. As per the table and graph below, of all the migrants in the Facebook data, there were more migrants in their mid-20s and mid-30s compared to younger (teenagers) or older (past 50) populations. All of the waves had similar age patterns. 
+Now, we will examine the age patterns of migrants within the different waves. The Facebook data only contains information on individuals between the ages of 15 to 59. As per the table and graph below, of all the migrants in the Facebook data, there were more migrants in their mid-20s and mid-30s compared to younger (teenagers) or older (past 50) populations. All of the waves had similar age patterns. 
 
 ```{r}
 #looking at how many people who migrated were of what age group generally 
@@ -202,7 +201,7 @@ ggplot(age_comparison, aes(x=age_group, y=n, color=factor(wave)))+
 
 ## Expats by country of origin {#expatpopsize}
 
-The FB data contains estimates of expats from 28 countries.
+The Facebook data contains estimates of expats from 28 countries. Of course, this is not representative of all of the countries migrants come from. 
 
 ```{r}
 ## unique expat groups (country of origin)
@@ -230,7 +229,7 @@ fb.expat %>%
 
 ```
 
-Data note: There is a large difference in counts between Waves 5 and 6 (and similarity between Waves 6 and 7). This illustrates that FB data isn't always stable: it can suddenly change. Alexander et al note that a limitation is the opaqueness of the Facebook algorithm or shift in privacy policies. For example, it is interesting to note that the Cambridge Analytica data scandal (where the personal data belonging to millions of Facebook users was collected without their consent) occurred in March 2018 (during Wave 6). Perhaps the increase in media attention regarding social media privacy policies spurred Facebook to change their algorithms, shift their estimates, or change how data is shared in the Ads manager (i.e. bottom-coding, rounding).
+Data note: There is a large difference in counts between Waves 5 and 6 (and similarity between Waves 6 and 7). This illustrates that Facebook data isn't always stable: it can suddenly change. Alexander et al note that a limitation is the opaqueness of the Facebook algorithm or shift in privacy policies. For example, it is interesting to note that the Cambridge Analytica data scandal (where the personal data belonging to millions of Facebook users was collected without their consent) occurred in March 2018 (during Wave 6). Perhaps the increase in media attention regarding social media privacy policies spurred Facebook to change their algorithms, shift their estimates, or change how data is shared in the Ads manager (i.e. bottom-coding, rounding).
 
 We now create a chord map to visualize the migration patterns of those in the FB data set. Examining just the 3 largest migrant groups in the US, as well as Puerto Rico, for wave 4 (October 2017), we see that 
 
@@ -261,7 +260,7 @@ mig_flow4 %>% mig_chord()
 
 ```
 
-We see similar patterns in wave 5 (Jan 2018).
+When we compare the migration patters to Wave 5 (January 2018), we see similar patterns. Hurriciane Maria occurs between Waves 4 and 5. While not evident in the chord maps, when we look at the numbers, we find a slight increase in Puerto Rican migrants to Florida between Wave 4 and Wave 5. In the same time frame, we see a slight decrease in migrants to California and Texas.  
 
 ```{r}
 ## wave 5
@@ -271,8 +270,6 @@ mig_flow5 <- fb %>% filter(wave==5, origin== "Puerto Rico") %>%#, state=="Texas"
 mig_flow5 %>% mig_chord()
 
 ```
-
-
 
 ## WA FB total population + expat population
 
@@ -325,7 +322,7 @@ Maps are a great way to visualize migration patterns. Static maps are the most s
 
 **ggplot2**
 
-Here, we look at the data for Wave 4 (this is when Hurricane Maria took place). The maps visually show what we found earlier: that the [estimated population size](#expatpopsize) for migrants from Mexico is much larger than those from other countries. To attenuate the numerical difference, the logged population size is displayed on the map. It's also important to remember that the FB data only covers 28 countries: it is not the case that there are no migrants from the entire African continent or Latin America.  
+Here, we look at the data for Wave 4 (this is when Hurricane Maria took place). The maps visually show what we found earlier: that the [estimated population size](#expatpopsize) for migrants from Mexico is much larger than those from other countries. To attenuate the numerical difference, the logged population size is displayed on the map. It's also important to remember that the Facebook data only covers 28 countries: it is not the case that there are no migrants from the entire African continent or Latin America.  
 
 ```{r}
 ## plot the data on expat groups
@@ -393,7 +390,7 @@ The `tmap` library can be used to create both static and interactive maps. Stati
 #require(tmap)
 ## create static tmap
 
-#tmap_options(check.and.fix = TRUE)
+tmap_options(check.and.fix = TRUE)
 
 world %>% 
   sf::st_transform(crs=4326) %>%  
@@ -447,9 +444,9 @@ acs_prop_age <- read_csv("https://raw.githubusercontent.com/MJAlexander/fb-migra
 
 ---
 
-# **Comparing FB and ACS data**
+# Comparing FB and ACS data
 
-Alexander et al note that FB data is not representative of the broader population and it is difficult for the findings to be generalizable. However, the ACS is designed to be nationally representative. Therefore, the comparison of the FB estimates with the ACS estimates enables us to assess this potential bias. 
+Alexander et al note that Facebook data are not representative of the broader population and it is difficult for the findings to be generalizable. However, the ACS is designed to be nationally representative. Therefore, the comparison of the FB estimates with the ACS estimates enables us to assess this potential bias. 
 
 ## National level differences
 
@@ -479,7 +476,7 @@ kable(acs.fb.comp %>% select(1:4), format.args=list(big.mark=',')) %>%
 
 ```
 
-Note: in the table above, positive values indicate a larger ACS estimate and negative values suggest larger FB values.
+Note: in the table above, positive values indicate a larger ACS estimate and negative values suggest larger Facebook values.
 
 
 ```{r}
@@ -497,7 +494,7 @@ world %>% left_join(acs.fb.comp, by=c("admin"="origin")) %>%
 
 ## State level differences
 
-When examining differences in the PR expat population by state, the authors exclude North Carolina from the analysis. They explain that it is in an anomaly. They also examined only states with 18,000+ PRs to avoid rounding issues. For these 11 states, while the ACS and FB data do yield different migrant population estimates at the state level, most of them are comparable. However, the disparity between the two data sets are slightly greater (indicating a greater misalignment) for Connecticut and New Jersey. The states with the largest PR populations are Florida, New York, and Pennsylvania.  
+When examining differences in the PR expat population by state, the authors exclude North Carolina from the analysis. They explain that it is in an anomaly. They also examined only states with 18,000+ PRs to avoid rounding issues. For these 11 states, while the ACS and Facebook data do yield different migrant population estimates at the state level, most of them are comparable. However, the disparity between the two data sets are slightly greater (indicating a greater misalignment) for Connecticut and New Jersey. The states with the largest PR populations are Florida, New York, and Pennsylvania.  
 
 ```{r}
 # 4. Top states based on PR population --------------------------------
@@ -795,7 +792,6 @@ The estimates suggest post Hurricane Maria, many Puerto Ricans were moving to th
 
 
 ### Map
-
 (Figure 2 in the paper)
 
 The largest increase of Puerto Rican migrants is in Florida. 
@@ -832,7 +828,6 @@ states_map %>%
 
 
 ## Age-specific estimates of out-migrants from PR to the US
-
 (Figure 3 in the paper)
 
 In terms of who migrated out of Puerto Rico after Hurricane Maria, there is an increase in those in the 15-29 year age range. There were fewer people above the age of 35 migrating out of Puerto Rico in a post-disaster context. 
@@ -903,7 +898,6 @@ d_tot %>%
 ```
 
 ## Change in sex ratio of out-migrants from PR, by state
-
 (Table 3 in the paper)
 
 Pre- and post-hurricane, there were larger numbers of men than women in all nine states. However, there were some states (i.e. Texas) that show an increase of male migrants, while other states (i.e. Pennsylvania) saw an increase of female migrants. 
